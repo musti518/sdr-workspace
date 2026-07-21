@@ -35,6 +35,7 @@
 #include "vrt-tools.h"
 #include "dt-extended-context.h"
 #include "tracker-extended-context.h"
+#include "gnss-extended-context.h"
 
 namespace po = boost::program_options;
 
@@ -122,6 +123,7 @@ int main(int argc, char* argv[])
         ("continue", "don't abort on a bad packet")
         ("meta-only", "only create sigmf-meta file")
         ("dt-trace", "add DT trace data")
+        ("gnss", "add GNSS extended context data")
         ("tracking", "add tracking context data")
         ("vrt", "write VRT stream to file")
         ("address", po::value<std::string>(&zmq_address)->default_value("localhost"), "VRT ZMQ address")
@@ -151,6 +153,7 @@ int main(int argc, char* argv[])
     bool continue_on_bad_packet = vm.count("continue") > 0;
     bool meta_only              = vm.count("meta-only") > 0;
     bool dt_trace               = vm.count("dt-trace") > 0;
+    bool gnss                    = vm.count("gnss") > 0;
     bool tracking               = vm.count("tracking") > 0;
     bool do_auto_file           = vm.count("auto-file") > 0;
     bool int_second             = vm.count("int-second") > 0;
@@ -194,6 +197,7 @@ int main(int argc, char* argv[])
     context_type vrt_context;
     dt_ext_context_type dt_ext_context;
     tracker_ext_context_type tracker_ext_context;
+    gnss_ext_context_type gnss_ext_context;
     init_context(&vrt_context);
 
     packet_type vrt_packet;
@@ -331,6 +335,7 @@ int main(int argc, char* argv[])
 
         if ( not (context_recv & vrt_packet.stream_id) and vrt_packet.context
              and not first_frame and not (dt_trace and not dt_ext_context.dt_ext_context_received)
+             and not (gnss and not gnss_ext_context.gnss_ext_context_received)
              and not (tracking and not tracker_ext_context.tracker_ext_context_received)) {
 
             context_recv |= vrt_packet.stream_id;
@@ -346,7 +351,7 @@ int main(int argc, char* argv[])
                     std::string json = str(boost::format("{ \n"
                     "    \"global\": {\n"
                     "        \"core:version\": \"1.0.0\",\n"
-                    "        \"core:recorder\": \"vrt_to_sigmf\",\n"
+                    "        \"core:recorder\": \"iq_recorder\",\n"
                     "        \"core:sample_rate\": %u,\n") % vrt_context.sample_rate);
                     if (vrt) {
                         json += str(boost::format(
@@ -458,6 +463,44 @@ int main(int argc, char* argv[])
                         % (tracker_ext_context.doppler)
                         % (tracker_ext_context.doppler_rate) );
                     }
+		    if (gnss) {
+                        char const *fixStrings[] = {"none", "dead reckoning", "2D", "3D", "gnss+dead reckoning", "time only"};
+                        json += str(boost::format(
+                        "        \"gnss:datetime\": \"%s.%06.0f\",\n"
+                        "        \"gnss:fix_type\": \"%s\",\n"
+                        "        \"gnss:num_sv\": %u,\n"
+                        "        \"gnss:latitude\": %.7f,\n"
+                        "        \"gnss:longitude\": %.7f,\n"
+                        "        \"gnss:height_m\": %.3f,\n"
+                        "        \"gnss:h_acc_m\": %.3f,\n"
+                        "        \"gnss:v_acc_m\": %.3f,\n"
+                        "        \"gnss:ground_speed_ms\": %.3f,\n"
+                        "        \"gnss:heading_deg\": %.3f,\n"
+                        "        \"gnss:pdop\": %.2f,\n"
+                        "        \"gnss:fix_ok\": \"%s\",\n"
+                        "        \"gnss:diff_soln\": \"%s\",\n"
+                        "        \"gnss:time\": \"%04u-%02u-%02uT%02u:%02u:%02u\",\n" )
+                        % (boost::posix_time::to_iso_extended_string(boost::posix_time::from_time_t(gnss_ext_context.integer_seconds_timestamp)))
+                        % ((double)(gnss_ext_context.fractional_seconds_timestamp/1e6))
+                        % (fixStrings[gnss_ext_context.fix_type <= 5 ? gnss_ext_context.fix_type : 0])
+                        % gnss_ext_context.num_sv
+                        % gnss_ext_context.latitude
+                        % gnss_ext_context.longitude
+                        % gnss_ext_context.height
+                        % gnss_ext_context.h_acc
+                        % gnss_ext_context.v_acc
+                        % gnss_ext_context.ground_speed
+                        % gnss_ext_context.heading
+                        % gnss_ext_context.pdop
+                        % (gnss_ext_context.gnss_fix_ok ? "true" : "false")
+                        % (gnss_ext_context.diff_soln ? "true" : "false")
+                        % gnss_ext_context.gnss_year
+                        % gnss_ext_context.gnss_month
+                        % gnss_ext_context.gnss_day
+                        % gnss_ext_context.gnss_hour
+                        % gnss_ext_context.gnss_min
+                        % gnss_ext_context.gnss_sec );
+                    }    
                     if (vrt_context.timestamp_calibration_time != 0) {
                         json += str(boost::format("        \"vrt:cal_time\": %u,\n") % vrt_context.timestamp_calibration_time);
                     }
@@ -513,6 +556,7 @@ int main(int argc, char* argv[])
             dt_process(buffer, sizeof(buffer), &vrt_packet, &dt_ext_context);
             if (tracking)
                 tracker_process(buffer, sizeof(buffer), &vrt_packet, &tracker_ext_context);
+            gnss_process(buffer, sizeof(buffer), &vrt_packet, &gnss_ext_context);
         }
 
         if (vrt_packet.data) {
