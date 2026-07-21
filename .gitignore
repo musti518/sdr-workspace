@@ -1,0 +1,10 @@
+build/
+*.o
+*.a
+*.sigmf-data
+*.sigmf-meta
+core
+core.*
+*.swp
+*~
+__pycache__/
