@@ -11,5 +11,5 @@ sleep 2
 RECORDER_PID=$!
 sleep 1
 
-~/src/vrt-iq-tools/build/usrp_to_vrt --freq 98e6 --rate 2e6 --gain 40 \
+~/src/sdr-workspace/build/usrp_to_vrt --freq 98e6 --rate 2e6 --gain 40 \
     --merge 1 --merge-port 50110 --progress
