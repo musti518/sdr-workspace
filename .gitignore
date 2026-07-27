@@ -8,3 +8,4 @@ core.*
 *.swp
 *~
 __pycache__/
+!test_runs/.gitkeep

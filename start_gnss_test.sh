@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ~/data/iq || exit 1
+cd ~/src/sdr-workspace/test_runs || exit 1
 
 trap 'kill $GNSS_PID $RECORDER_PID 2>/dev/null' EXIT
 
