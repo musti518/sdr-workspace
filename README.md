@@ -12,7 +12,7 @@ Erweiterungen rund um IQ-Aufnahme, VRT-Metadaten und GNSS-Integration.
 - gnss/read_pvt.py                 — Referenz: Felder aus UBX-NAV-PVT (u-blox ZED-F9P)
 
 ## Hardware
-- Ettus USRP B205mini (geplant)
+- Ettus USRP B205mini
 - u-blox ZED-F9P, USB-Dongle, aktive Antenne
 
 ## Build
