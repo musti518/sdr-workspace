@@ -1,6 +1,4 @@
-Hier die angepasste Version — neutraler formuliert, ohne "mein"/"ich" und ohne den Zwei-Stationen-Bezug:
 
-```markdown
 # sdr-workspace
 
 Projekt für SDR-Arbeit mit VRT und SigMF. Basiert auf Thomas Telkamps
@@ -41,6 +39,11 @@ ursprünglichen Teleskop-Projekt, von dem das hier abstammt) liegt in
   den ganzen C++-Kram zu testen
 
 ## Hardware
+<<<<<<< HEAD
+=======
+- Ettus USRP B205mini
+- u-blox ZED-F9P, USB-Dongle, aktive Antenne
+>>>>>>> 32bcf6cf821ec61aff90ae43c1a80e98d92063b9
 
 - Ettus USRP B205mini
 - u-blox ZED-F9P (GNSS), als USB-Dongle
